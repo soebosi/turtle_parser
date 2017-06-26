@@ -22,39 +22,9 @@ fn is_pn_chars_base(c: char) -> bool {
     (u >=  0xFDF0 && u <=  0xFFFD) ||
     (u >= 0x10000 && u <= 0xEFFFF)
 }
-fn _pn_chars_base(input:&[u8]) -> IResult<&[u8],&[u8]> {
-    for c in str::from_utf8(input).unwrap().chars() {
-        if ! is_pn_chars_base(c) {
-            return IResult::Error(nom::ErrorKind::Custom(20)) //TODO: Use correct Error.
-        }
-    }
-    IResult::Done(&b""[..], &input[..])
-}
-
-/* [163s] PN_CHARS_BASE */
-named!(pn_chars_base, flat_map!(
-    take!(1),
-    _pn_chars_base
-));
-
 fn is_pn_chars_u(c: char) -> bool {
     is_pn_chars_base(c) || c == '_'
 }
-fn _pn_chars_u(input:&[u8]) -> IResult<&[u8],&[u8]> {
-    for c in str::from_utf8(input).unwrap().chars() {
-        if ! is_pn_chars_u(c) {
-            return IResult::Error(nom::ErrorKind::Custom(20)) //TODO: Use correct Error.
-        }
-    }
-    IResult::Done(&b""[..], &input[..])
-}
-
-/* [164s] PN_CHARS_U */
-named!(pn_chars_u, flat_map!(
-    take!(1),
-    _pn_chars_u
-));
-
 fn is_pn_chars(c: char) -> bool {
     let u = c as u32;
     is_pn_chars_u(c)             ||
@@ -64,19 +34,29 @@ fn is_pn_chars(c: char) -> bool {
     (u >=  0x300 && u <=  0x36F) ||
     (u >= 0x203F && u <= 0x2040)
 }
-fn _pn_chars(input:&[u8]) -> IResult<&[u8],&[u8]> {
-    for c in str::from_utf8(input).unwrap().chars() {
-        if ! is_pn_chars(c) {
-            return IResult::Error(nom::ErrorKind::Custom(20)) //TODO: Use correct Error.
-        }
+
+/* [163s] PN_CHARS_BASE */
+named!(pn_chars_base<&str, &str>, verify!(
+    take_s!(1),
+    |val:&str| {
+        is_pn_chars_base(val.chars().next().unwrap())
     }
-    IResult::Done(&b""[..], &input[..])
-}
+));
+
+/* [164s] PN_CHARS_U */
+named!(pn_chars_u<&str, &str>, verify!(
+    take_s!(1),
+    |val:&str| {
+        is_pn_chars_u(val.chars().next().unwrap())
+    }
+));
 
 /* [166s] PN_CHARS */
-named!(pn_chars, flat_map!(
-    take!(1),
-    _pn_chars
+named!(pn_chars<&str, &str>, verify!(
+    take_s!(1),
+    |val:&str| {
+        is_pn_chars(val.chars().next().unwrap())
+    }
 ));
 
 /* [169s] PLX */
@@ -101,9 +81,9 @@ named!(pn_local_esc, escaped!(
 
 fn main() {
     assert_eq!(statement(&b"a b c. d e f."[..]), IResult::Done(&b" d e f."[..], &b"a b c"[..]));
-    assert_eq!(pn_chars_base(&b"a%2Ab"[..])    , IResult::Done(&b"%2Ab"[..]   , &b"a"[..]    ));
-    assert_eq!(pn_chars_u(&b"_a"[..])          , IResult::Done(&b"a"[..]      , &b"_"[..]    ));
-    assert_eq!(pn_chars(&b"-_a"[..])           , IResult::Done(&b"_a"[..]     , &b"-"[..]    ));
+    assert_eq!(pn_chars_base("a%2Ab")          , IResult::Done("%2Ab"         , "a"          ));
+    assert_eq!(pn_chars_u("_a")                , IResult::Done("a"            , "_"          ));
+    assert_eq!(pn_chars("-_a")                 , IResult::Done("_a"           , "-"          ));
     assert_eq!(plx(&b"%2Abc"[..])              , IResult::Done(&b"bc"[..]     , &b"2A"[..]   ));
     assert_eq!(plx(&b"\\.%2A"[..])             , IResult::Done(&b"%2A"[..]    , &b"\\."[..]  ));
     assert_eq!(percent(&b"%2Abc"[..])          , IResult::Done(&b"bc"[..]     , &b"2A"[..]   ));
