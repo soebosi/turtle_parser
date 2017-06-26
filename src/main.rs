@@ -8,31 +8,28 @@ named!(statement, take_until_either_and_consume!("."));
 
 fn is_pn_chars_base(c: char) -> bool {
     let u = c as u32;
-    (u >=    0x41 && u <=    0x5A) || // [A-Z]
-    (u >=    0x61 && u <=    0x7A) || // [a-z]
-    (u >=    0xC0 && u <=    0xD6) ||
-    (u >=    0xD8 && u <=    0xF6) ||
-    (u >=    0xF8 && u <=   0x2FF) ||
-    (u >=   0x370 && u <=   0x37D) ||
-    (u >=   0x37F && u <=  0x1FFF) ||
-    (u >=  0x200C && u <=  0x200D) ||
-    (u >=  0x2C00 && u <=  0x2FEF) ||
-    (u >=  0x3001 && u <=  0xD7FF) ||
-    (u >=  0xF900 && u <=  0xFDCF) ||
-    (u >=  0xFDF0 && u <=  0xFFFD) ||
-    (u >= 0x10000 && u <= 0xEFFFF)
+    match u {
+        0x41    ... 0x5A   | 0x61   ... 0x7A   |
+        0xC0    ... 0xD6   | 0xD8   ... 0xF6   |
+        0xF8    ... 0x2FF  | 0x370  ... 0x37D  |
+        0x37F   ... 0x1FFF | 0x200C ... 0x200D |
+        0x2C00  ... 0x2FEF | 0x3001 ... 0xD7FF |
+        0xF900  ... 0xFDCF | 0xFDF0 ... 0xFFFD |
+        0x10000 ... 0xEFFFF
+          => true,
+        _ => false,
+    }
 }
 fn is_pn_chars_u(c: char) -> bool {
     is_pn_chars_base(c) || c == '_'
 }
 fn is_pn_chars(c: char) -> bool {
     let u = c as u32;
-    is_pn_chars_u(c)             ||
-    u == '-' as u32              ||
-    u ==  0xB7                   ||
-    (u >=   0x30 && u <=   0x39) || // [0-9]
-    (u >=  0x300 && u <=  0x36F) ||
-    (u >= 0x203F && u <= 0x2040)
+    match u {
+        0x2d | 0xB7 | 0x30...0x39 | 0x300...0x36F | 0x203F...0x2040
+          => true,
+        _ => is_pn_chars_base(c),
+    }
 }
 
 /* [163s] PN_CHARS_BASE */
