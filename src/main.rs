@@ -36,7 +36,10 @@ fn is_pn_chars(c: char) -> bool {
 named!(pn_chars_base<&str, &str>, verify!(
     take_s!(1),
     |val:&str| {
-        is_pn_chars_base(val.chars().next().unwrap())
+        if let Some(c) = val.chars().next() {
+            return is_pn_chars_base(c)
+        }
+        false
     }
 ));
 
@@ -44,7 +47,10 @@ named!(pn_chars_base<&str, &str>, verify!(
 named!(pn_chars_u<&str, &str>, verify!(
     take_s!(1),
     |val:&str| {
-        is_pn_chars_u(val.chars().next().unwrap())
+        if let Some(c) = val.chars().next() {
+            return is_pn_chars_u(c)
+        }
+        false
     }
 ));
 
@@ -52,7 +58,10 @@ named!(pn_chars_u<&str, &str>, verify!(
 named!(pn_chars<&str, &str>, verify!(
     take_s!(1),
     |val:&str| {
-        is_pn_chars(val.chars().next().unwrap())
+        if let Some(c) = val.chars().next() {
+            return is_pn_chars(c)
+        }
+        false
     }
 ));
 
