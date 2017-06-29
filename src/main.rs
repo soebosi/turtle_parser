@@ -2,9 +2,11 @@
 extern crate nom;
 
 use std::str;
-use nom::{IResult, space, hex_digit};
-
-named!(statement, take_until_either_and_consume!("."));
+use nom::{
+    IResult,
+    ErrorKind,
+    is_hex_digit
+};
 
 fn is_pn_chars_base(c: char) -> bool {
     let u = c as u32;
@@ -71,6 +73,16 @@ named!(pn_chars<&str, &str>, verify!(
     }
 ));
 
+/* [167s] PN_PREFIX */
+named!(pn_prefix<&str, &str>, do_parse!(
+    base:  pn_chars_base    >>
+    chars: many0!(
+        alt!(pn_chars)
+    ) >>
+    colon: verify!(take_s!(1), |val:&str| val == ":") >>
+    (base) // TODO: Fix me
+));
+
 /* [169s] PLX */
 named!(plx<&str, &str>, alt!(percent | pn_local_esc));
 
@@ -94,12 +106,12 @@ named!(pn_local_esc<&str, &str>, verify!(
 ));
 
 fn main() {
-    assert_eq!(statement(&b"a b c. d e f."[..]), IResult::Done(&b" d e f."[..], &b"a b c"[..]));
-    assert_eq!(pn_chars_base("a%2Ab")          , IResult::Done("%2Ab"         , "a"          ));
-    assert_eq!(pn_chars_u("_a")                , IResult::Done("a"            , "_"          ));
-    assert_eq!(pn_chars("-_a")                 , IResult::Done("_a"           , "-"          ));
-    assert_eq!(plx(&b"%2Abc"[..])              , IResult::Done(&b"bc"[..]     , &b"2A"[..]   ));
-    assert_eq!(plx(&b"\\.%2A"[..])             , IResult::Done(&b"%2A"[..]    , &b"\\."[..]  ));
-    assert_eq!(percent(&b"%2Abc"[..])          , IResult::Done(&b"bc"[..]     , &b"2A"[..]   ));
-    assert_eq!(pn_local_esc(&b"\\.a b c"[..])  , IResult::Done(&b"a b c"[..]  , &b"\\."[..]  ));
+    assert_eq!(pn_chars_base("a%2Ab")  , IResult::Done("%2Ab" , "a")      );
+    assert_eq!(pn_chars_u("_a")        , IResult::Done("a"    , "_")      );
+    assert_eq!(pn_chars("-_a")         , IResult::Done("_a"   , "-")      );
+    assert_eq!(pn_chars(":a2Ab")       , IResult::Error(ErrorKind::Verify));
+    assert_eq!(plx("%2Abc")            , IResult::Done("bc"   , "%2A")    );
+    assert_eq!(plx("\\.%2A")           , IResult::Done("%2A"  , "\\.")    );
+    assert_eq!(percent("%2Abc")        , IResult::Done("bc"   , "%2A")    );
+    assert_eq!(pn_local_esc("\\.a b c"), IResult::Done("a b c", "\\.")    );
 }
