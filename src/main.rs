@@ -31,6 +31,12 @@ fn is_pn_chars(c: char) -> bool {
         _ => is_pn_chars_base(c),
     }
 }
+fn is_pn_local_esc(c: char) -> bool {
+    match "_~.-!$&'()*+,;=/?#@%".find(c) {
+        Some(_) => true,
+        _       => false,
+    }
+}
 
 /* [163s] PN_CHARS_BASE */
 named!(pn_chars_base<&str, &str>, verify!(
@@ -66,23 +72,25 @@ named!(pn_chars<&str, &str>, verify!(
 ));
 
 /* [169s] PLX */
-named!(plx, alt!(percent | pn_local_esc));
+named!(plx<&str, &str>, alt!(percent | pn_local_esc));
 
 /* [170s] PERCENT */
-named!(percent, do_parse!(
-    tag!("%") >>
-    hex2: flat_map!(
-        take!(2),
-        hex_digit
-    ) >>
-    (hex2)
+named!(percent<&str, &str>, verify!(
+    take_s!(3),
+    |val:&str| {
+        let bytes = val.as_bytes();
+        bytes[0] == 0x25 && is_hex_digit(bytes[1]) && is_hex_digit(bytes[2])
+    }
 ));
 
 /* [172s]  PN_LOCAL_ESC */
-named!(pn_local_esc, escaped!(
-    call!(space),
-    '\\',
-    one_of!("_~.-!$&'()*+,;=/?#@%")
+named!(pn_local_esc<&str, &str>, verify!(
+    take_s!(2),
+    |val:&str| {
+        let c1 = val.chars().nth(0).unwrap();
+        let c2 = val.chars().nth(1).unwrap();
+        c1 == '\\' && is_pn_local_esc(c2)
+    }
 ));
 
 fn main() {
