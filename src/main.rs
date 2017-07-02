@@ -74,13 +74,20 @@ named!(pn_chars<&str, &str>, verify!(
 ));
 
 /* [167s] PN_PREFIX */
-named!(pn_prefix<&str, &str>, do_parse!(
-    base:  pn_chars_base    >>
-    chars: many0!(
-        alt!(pn_chars)
-    ) >>
-    colon: verify!(take_s!(1), |val:&str| val == ":") >>
-    (base) // TODO: Fix me
+named!(pn_prefix<&str, &str>, verify!(
+    take_until!(":"),
+    |val:&str| {
+        let len = val.char_indices().count();
+        val.char_indices().all(|(idx, c)| {
+            if idx == 0 {
+                is_pn_chars_base(c)
+            } else if idx == len - 1 {
+                c != '.'
+            } else {
+                is_pn_chars(c) || c == '.'
+            }
+        })
+    }
 ));
 
 /* [169s] PLX */
@@ -110,6 +117,8 @@ fn main() {
     assert_eq!(pn_chars_u("_a")        , IResult::Done("a"    , "_")      );
     assert_eq!(pn_chars("-_a")         , IResult::Done("_a"   , "-")      );
     assert_eq!(pn_chars(":a2Ab")       , IResult::Error(ErrorKind::Verify));
+    assert_eq!(pn_prefix("hog.e:")     , IResult::Done(":"    , "hog.e")  );
+    assert_eq!(pn_prefix("hoge.:")     , IResult::Error(ErrorKind::Verify));
     assert_eq!(plx("%2Abc")            , IResult::Done("bc"   , "%2A")    );
     assert_eq!(plx("\\.%2A")           , IResult::Done("%2A"  , "\\.")    );
     assert_eq!(percent("%2Abc")        , IResult::Done("bc"   , "%2A")    );
