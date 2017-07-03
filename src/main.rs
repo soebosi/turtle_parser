@@ -22,9 +22,11 @@ fn is_pn_chars_base(c: char) -> bool {
         _ => false,
     }
 }
+
 fn is_pn_chars_u(c: char) -> bool {
     is_pn_chars_base(c) || c == '_'
 }
+
 fn is_pn_chars(c: char) -> bool {
     let u = c as u32;
     match u {
@@ -33,6 +35,7 @@ fn is_pn_chars(c: char) -> bool {
         _ => is_pn_chars_base(c),
     }
 }
+
 fn is_pn_local_esc(c: char) -> bool {
     match "_~.-!$&'()*+,;=/?#@%".find(c) {
         Some(_) => true,
@@ -90,6 +93,26 @@ named!(pn_prefix<&str, &str>, verify!(
     }
 ));
 
+fn is_pn_local(c: char) -> bool {
+    is_pn_chars(c) || c == '.' || c == ':' // TODO: use is_plx
+}
+/* [168s] PN_LOCAL */
+named!(pn_local<&str, &str>, verify!(
+    take_while_s!(is_pn_local),
+    |val:&str| {
+        let len = val.char_indices().count();
+        val.char_indices().all(|(idx, c)| {
+            if idx == 0 {
+                is_pn_chars_u(c) || c == ':' // TODO: use is_plx
+            } else if idx == len - 1 {
+                is_pn_chars(c) || c == ':' // TODO: use is_plx
+            } else {
+                is_pn_chars(c) || c == ':' || c == '.' // TODO: use is_plx
+            }
+        })
+    }
+));
+
 /* [169s] PLX */
 named!(plx<&str, &str>, alt!(percent | pn_local_esc));
 
@@ -113,14 +136,15 @@ named!(pn_local_esc<&str, &str>, verify!(
 ));
 
 fn main() {
-    assert_eq!(pn_chars_base("a%2Ab")  , IResult::Done("%2Ab" , "a")      );
-    assert_eq!(pn_chars_u("_a")        , IResult::Done("a"    , "_")      );
-    assert_eq!(pn_chars("-_a")         , IResult::Done("_a"   , "-")      );
-    assert_eq!(pn_chars(":a2Ab")       , IResult::Error(ErrorKind::Verify));
-    assert_eq!(pn_prefix("hog.e:")     , IResult::Done(":"    , "hog.e")  );
-    assert_eq!(pn_prefix("hoge.:")     , IResult::Error(ErrorKind::Verify));
-    assert_eq!(plx("%2Abc")            , IResult::Done("bc"   , "%2A")    );
-    assert_eq!(plx("\\.%2A")           , IResult::Done("%2A"  , "\\.")    );
-    assert_eq!(percent("%2Abc")        , IResult::Done("bc"   , "%2A")    );
-    assert_eq!(pn_local_esc("\\.a b c"), IResult::Done("a b c", "\\.")    );
+    assert_eq!(pn_chars_base("a%2Ab")    , IResult::Done("%2Ab", "a")         );
+    assert_eq!(pn_chars_u("_a")          , IResult::Done("a"   , "_")         );
+    assert_eq!(pn_chars("-_a")           , IResult::Done("_a"  , "-")         );
+    assert_eq!(pn_chars(":a2Ab")         , IResult::Error(ErrorKind::Verify)  );
+    assert_eq!(pn_prefix("hog.e:")       , IResult::Done(":", "hog.e")        );
+    assert_eq!(pn_prefix("hoge.:")       , IResult::Error(ErrorKind::Verify)  );
+    assert_eq!(pn_local("hoge:fuga piyo"), IResult::Done(" piyo", "hoge:fuga"));
+    assert_eq!(plx("%2Abc")              , IResult::Done("bc"   , "%2A")      );
+    assert_eq!(plx("\\.%2A")             , IResult::Done("%2A"  , "\\.")      );
+    assert_eq!(percent("%2Abc")          , IResult::Done("bc"   , "%2A")      );
+    assert_eq!(pn_local_esc("\\.a b c")  , IResult::Done("a b c", "\\.")      );
 }
