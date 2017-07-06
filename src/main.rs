@@ -94,22 +94,39 @@ named!(pn_prefix<&str, &str>, verify!(
 ));
 
 fn is_pn_local(c: char) -> bool {
-    is_pn_chars(c) || c == '.' || c == ':' // TODO: use is_plx
+    is_pn_chars(c) ||
+    c == '.'  || c == ':'              ||
+    c == '%'  || is_hex_digit(c as u8) ||
+    c == '\\' || is_pn_local_esc(c)
 }
 /* [168s] PN_LOCAL */
 named!(pn_local<&str, &str>, verify!(
     take_while_s!(is_pn_local),
     |val:&str| {
         let len = val.char_indices().count();
+        let mut percent_count = 0;
+        let mut pn_local_esc_count = 0;
         val.char_indices().all(|(idx, c)| {
-            if idx == 0 {
-                is_pn_chars_u(c) || c == ':' // TODO: use is_plx
+            if percent_count > 0 {
+                percent_count = percent_count - 1;
+                is_hex_digit(c as u8)
+            } else if c == '%' {
+                percent_count = 2;
+                true
+            } else if pn_local_esc_count > 0 {
+                pn_local_esc_count = pn_local_esc_count - 1;
+                is_pn_local_esc(c)
+            } else if c == '\\' {
+                pn_local_esc_count = 1;
+                true
+            } else if idx == 0 {
+                is_pn_chars_u(c) || c == ':'
             } else if idx == len - 1 {
-                is_pn_chars(c) || c == ':' // TODO: use is_plx
+                is_pn_chars(c) || c == ':'
             } else {
-                is_pn_chars(c) || c == ':' || c == '.' // TODO: use is_plx
+                is_pn_chars(c) || c == ':' || c == '.'
             }
-        })
+        }) && percent_count == 0 && pn_local_esc_count == 0
     }
 ));
 
@@ -143,6 +160,12 @@ fn main() {
     assert_eq!(pn_prefix("hog.e:")       , IResult::Done(":", "hog.e")        );
     assert_eq!(pn_prefix("hoge.:")       , IResult::Error(ErrorKind::Verify)  );
     assert_eq!(pn_local("hoge:fuga piyo"), IResult::Done(" piyo", "hoge:fuga"));
+    assert_eq!(pn_local("hoge:%28 piyo") , IResult::Done(" piyo", "hoge:%28") );
+    assert_eq!(pn_local("hoge:%2 piyo")  , IResult::Error(ErrorKind::Verify)  );
+    assert_eq!(pn_local("hoge:%__ piyo") , IResult::Error(ErrorKind::Verify)  );
+    assert_eq!(pn_local("hoge:\\* piyo") , IResult::Done(" piyo", "hoge:\\*") );
+    assert_eq!(pn_local("%28\\* piyo")   , IResult::Done(" piyo", "%28\\*")   );
+    assert_eq!(pn_local("%28\\ piyo")    , IResult::Error(ErrorKind::Verify)  );
     assert_eq!(plx("%2Abc")              , IResult::Done("bc"   , "%2A")      );
     assert_eq!(plx("\\.%2A")             , IResult::Done("%2A"  , "\\.")      );
     assert_eq!(percent("%2Abc")          , IResult::Done("bc"   , "%2A")      );
