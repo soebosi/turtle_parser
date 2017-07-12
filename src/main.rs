@@ -52,9 +52,47 @@ fn is_anon(c: char) -> bool {
     c == '[' || c == ']' || is_ws(c)
 }
 
+fn is_uchar(c: char) -> bool {
+    c == '\\' || c == 'u' || is_hex_digit(c as u8)
+}
+
 fn is_echar(c: char) -> bool {
     c == '\\' || c == 't' || c == 'b' || c == 'n' || c == 'r' || c == 'f' || c == '"'
 }
+
+/* [159s] UCHAR */
+named!(uchar<&str, &str>, alt!(
+    verify!(
+        take_s!(6),
+        |val:&str| {
+            let len = val.char_indices().count();
+            val.char_indices().all(|(idx, c)| {
+                if idx == 0 {
+                    c == '\\'
+                } else if idx == 1 {
+                    c == 'u'
+                } else {
+                    is_hex_digit(c as u8)
+                }
+            })
+        }
+    ) |
+    verify!(
+        take_s!(10),
+        |val:&str| {
+            let len = val.char_indices().count();
+            val.char_indices().all(|(idx, c)| {
+                if idx == 0 {
+                    c == '\\'
+                } else if idx == 1 {
+                    c == 'U'
+                } else {
+                    is_hex_digit(c as u8)
+                }
+            })
+        }
+    )
+));
 
 /* [159s] ECHAR */
 named!(echar<&str, &str>, verify!(
@@ -201,6 +239,8 @@ named!(pn_local_esc<&str, &str>, verify!(
 ));
 
 fn main() {
+    assert_eq!(uchar("\\u02FFa")         , IResult::Done("a", "\\u02FF")      );
+    assert_eq!(uchar("\\U02FFAABBa")     , IResult::Done("a", "\\U02FFAABB")  );
     assert_eq!(echar("\\ta")             , IResult::Done("a", "\\t")          );
     assert_eq!(ws("   a")                , IResult::Done("a", "   ")          );
     assert_eq!(anon("[ ]a")              , IResult::Done("a", "[ ]")          );
