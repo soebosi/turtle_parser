@@ -43,6 +43,35 @@ fn is_pn_local_esc(c: char) -> bool {
     }
 }
 
+fn is_ws(c: char) -> bool {
+    let u = c as u32;
+    u == 0x20 || u == 0x9 || u == 0xD || u == 0xA
+}
+
+fn is_anon(c: char) -> bool {
+    c == '[' || c == ']' || is_ws(c)
+}
+
+/* [161s] WS */
+named!(ws<&str, &str>, take_while_s!(is_ws));
+
+/* [162s] ANON */
+named!(anon<&str, &str>, verify!(
+    take_while_s!(is_anon),
+    |val:&str| {
+        let len = val.char_indices().count();
+        val.char_indices().all(|(idx, c)| {
+            if idx == 0 {
+                c == '['
+            } else if idx == len - 1 {
+                c == ']'
+            } else {
+                is_ws(c)
+            }
+        })
+    }
+));
+
 /* [163s] PN_CHARS_BASE */
 named!(pn_chars_base<&str, &str>, verify!(
     take_s!(1),
@@ -153,6 +182,8 @@ named!(pn_local_esc<&str, &str>, verify!(
 ));
 
 fn main() {
+    assert_eq!(ws("   a")                , IResult::Done("a", "   ")          );
+    assert_eq!(anon("[ ]a")              , IResult::Done("a", "[ ]")          );
     assert_eq!(pn_chars_base("a%2Ab")    , IResult::Done("%2Ab", "a")         );
     assert_eq!(pn_chars_u("_a")          , IResult::Done("a"   , "_")         );
     assert_eq!(pn_chars("-_a")           , IResult::Done("_a"  , "-")         );
