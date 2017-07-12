@@ -52,6 +52,25 @@ fn is_anon(c: char) -> bool {
     c == '[' || c == ']' || is_ws(c)
 }
 
+fn is_echar(c: char) -> bool {
+    c == '\\' || c == 't' || c == 'b' || c == 'n' || c == 'r' || c == 'f' || c == '"'
+}
+
+/* [159s] ECHAR */
+named!(echar<&str, &str>, verify!(
+    take_s!(2),
+    |val:&str| {
+        let len = val.char_indices().count();
+        val.char_indices().all(|(idx, c)| {
+            if idx == 0 {
+                c == '\\'
+            } else {
+                is_echar(c)
+            }
+        })
+    }
+));
+
 /* [161s] WS */
 named!(ws<&str, &str>, take_while_s!(is_ws));
 
@@ -182,6 +201,7 @@ named!(pn_local_esc<&str, &str>, verify!(
 ));
 
 fn main() {
+    assert_eq!(echar("\\ta")             , IResult::Done("a", "\\t")          );
     assert_eq!(ws("   a")                , IResult::Done("a", "   ")          );
     assert_eq!(anon("[ ]a")              , IResult::Done("a", "[ ]")          );
     assert_eq!(pn_chars_base("a%2Ab")    , IResult::Done("%2Ab", "a")         );
