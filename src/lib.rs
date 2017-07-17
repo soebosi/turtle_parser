@@ -52,7 +52,7 @@ fn is_uchar(c: char) -> bool {
 }
 
 fn is_echar(c: char) -> bool {
-    c == '\\' || c == 't' || c == 'b' || c == 'n' || c == 'r' || c == 'f' || c == '"'
+    c == '\\' || c == 't' || c == 'b' || c == 'n' || c == 'r' || c == 'f' || c == '"' || c == '\''
 }
 
 /* [26] UCHAR */
@@ -246,7 +246,14 @@ mod test {
 
     #[test]
     fn echar_test() {
-        assert_eq!(echar("\\ta"), IResult::Done("a", "\\t"));
+        assert_eq!(echar("\\trest") , IResult::Done("rest", "\\t") );
+        assert_eq!(echar("\\brest") , IResult::Done("rest", "\\b") );
+        assert_eq!(echar("\\nrest") , IResult::Done("rest", "\\n") );
+        assert_eq!(echar("\\rrest") , IResult::Done("rest", "\\r") );
+        assert_eq!(echar("\\frest") , IResult::Done("rest", "\\f") );
+        assert_eq!(echar("\\\"rest"), IResult::Done("rest", "\\\""));
+        assert_eq!(echar("\\'rest") , IResult::Done("rest", "\\'") );
+        assert_eq!(echar("\\\\rest"), IResult::Done("rest", "\\\\"));
     }
 
     #[test]
