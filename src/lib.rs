@@ -55,7 +55,7 @@ fn is_echar(c: char) -> bool {
     c == '\\' || c == 't' || c == 'b' || c == 'n' || c == 'r' || c == 'f' || c == '"'
 }
 
-/* [159s] UCHAR */
+/* [26] UCHAR */
 named!(uchar<&str, &str>, alt!(
     verify!(
         take_s!(6),
