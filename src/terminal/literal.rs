@@ -59,6 +59,24 @@ named!(echar<&str, &str>, verify!(
     }
 ));
 
+named!(string_literal_long_single_quote_body<&str, Vec<&str>>, many0!(
+    alt!(tag!("'") | echar | uchar)
+));
+/* [24] STRING_LITERAL_LONG_SINGLE_QUOTE */
+named!(string_literal_long_single_quote<&str, &str>, delimited!(
+    tag!("'''"),
+    verify!(
+        take_until_s!("'''"),
+        |val: &str| {
+            match string_literal_long_single_quote_body(val) {
+                IResult::Error(_) => false,
+                _                 => true,
+            }
+        }
+    ),
+    tag!("'''")
+));
+
 
 named!(string_literal_long_quote_body<&str, Vec<&str>>, many0!(
     alt!(tag!("\"") | echar | uchar)
@@ -99,6 +117,13 @@ mod test {
         assert_eq!(echar("\\\"rest"), IResult::Done("rest", "\\\""));
         assert_eq!(echar("\\'rest") , IResult::Done("rest", "\\'") );
         assert_eq!(echar("\\\\rest"), IResult::Done("rest", "\\\\"));
+    }
+
+    #[test]
+    fn string_literal_long_single_quote_test() {
+        let input    = "'''\\t\\u02FF'''rest";
+        let expected = "\\t\\u02FF";
+        assert_eq!(string_literal_long_single_quote(input), IResult::Done("rest", expected));
     }
 
     #[test]
