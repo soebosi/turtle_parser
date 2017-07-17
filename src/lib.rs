@@ -240,8 +240,8 @@ mod test {
 
     #[test]
     fn uchar_test() {
-        assert_eq!(uchar("\\u02FFa")         , IResult::Done("a", "\\u02FF")    );
-        assert_eq!(uchar("\\U02FFAABBa")     , IResult::Done("a", "\\U02FFAABB"));
+        assert_eq!(uchar("\\u02FFa")    , IResult::Done("a", "\\u02FF")    );
+        assert_eq!(uchar("\\U02FFAABBa"), IResult::Done("a", "\\U02FFAABB"));
     }
 
     #[test]
@@ -271,7 +271,7 @@ mod test {
 
     #[test]
     fn pn_chars_test() {
-        assert_eq!(pn_chars("-_a")  , IResult::Done("_a"  , "-")       );
+        assert_eq!(pn_chars("-_a")  , IResult::Done("_a", "-")         );
         assert_eq!(pn_chars(":a2Ab"), IResult::Error(ErrorKind::Verify));
     }
 
