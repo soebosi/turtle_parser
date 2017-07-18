@@ -39,7 +39,7 @@ fn is_pn_local_esc(c: char) -> bool {
 }
 
 /* [163s] PN_CHARS_BASE */
-named!(pn_chars_base<&str, &str>, verify!(
+named!(pub pn_chars_base<&str, &str>, verify!(
     take_s!(1),
     |val:&str| {
         if let Some(c) = val.chars().next() {
@@ -50,7 +50,7 @@ named!(pn_chars_base<&str, &str>, verify!(
 ));
 
 /* [164s] PN_CHARS_U */
-named!(pn_chars_u<&str, &str>, verify!(
+named!(pub pn_chars_u<&str, &str>, verify!(
     take_s!(1),
     |val:&str| {
         if let Some(c) = val.chars().next() {
@@ -61,7 +61,7 @@ named!(pn_chars_u<&str, &str>, verify!(
 ));
 
 /* [166s] PN_CHARS */
-named!(pn_chars<&str, &str>, verify!(
+named!(pub pn_chars<&str, &str>, verify!(
     take_s!(1),
     |val:&str| {
         if let Some(c) = val.chars().next() {
@@ -72,7 +72,7 @@ named!(pn_chars<&str, &str>, verify!(
 ));
 
 /* [167s] PN_PREFIX */
-named!(pn_prefix<&str, &str>, verify!(
+named!(pub pn_prefix<&str, &str>, verify!(
     take_until!(":"),
     |val:&str| {
         let len = val.char_indices().count();
@@ -95,7 +95,7 @@ fn is_pn_local(c: char) -> bool {
     c == '\\' || is_pn_local_esc(c)
 }
 /* [168s] PN_LOCAL */
-named!(pn_local<&str, &str>, verify!(
+named!(pub pn_local<&str, &str>, verify!(
     take_while_s!(is_pn_local),
     |val:&str| {
         let len = val.char_indices().count();

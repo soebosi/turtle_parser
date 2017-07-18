@@ -13,10 +13,10 @@ fn is_anon(c: char) -> bool {
 }
 
 /* [161s] WS */
-named!(ws<&str, &str>, take_while_s!(is_ws));
+named!(pub ws<&str, &str>, take_while_s!(is_ws));
 
 /* [162s] ANON */
-named!(anon<&str, &str>, verify!(
+named!(pub anon<&str, &str>, verify!(
     take_while_s!(is_anon),
     |val:&str| {
         let len = val.char_indices().count();

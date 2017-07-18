@@ -3,10 +3,6 @@ extern crate nom;
 use std::str;
 use nom::*;
 
-fn is_uchar(c: char) -> bool {
-    c == '\\' || c == 'u' || is_hex_digit(c as u8)
-}
-
 fn is_echar(c: char) -> bool {
     c == '\\' || c == 't' || c == 'b' || c == 'n' || c == 'r' || c == 'f' || c == '"' || c == '\''
 }
@@ -59,11 +55,11 @@ named!(echar<&str, &str>, verify!(
     }
 ));
 
-named!(string_literal_long_single_quote_body<&str, Vec<&str>>, many0!(
+named!(pub string_literal_long_single_quote_body<&str, Vec<&str>>, many0!(
     alt!(tag!("'") | echar | uchar)
 ));
 /* [24] STRING_LITERAL_LONG_SINGLE_QUOTE */
-named!(string_literal_long_single_quote<&str, &str>, delimited!(
+named!(pub string_literal_long_single_quote<&str, &str>, delimited!(
     tag!("'''"),
     verify!(
         take_until_s!("'''"),
@@ -78,11 +74,11 @@ named!(string_literal_long_single_quote<&str, &str>, delimited!(
 ));
 
 
-named!(string_literal_long_quote_body<&str, Vec<&str>>, many0!(
+named!(pub string_literal_long_quote_body<&str, Vec<&str>>, many0!(
     alt!(tag!("\"") | echar | uchar)
 ));
 /* [25] STRING_LITERAL_LONG_QUOTE */
-named!(string_literal_long_quote<&str, &str>, delimited!(
+named!(pub string_literal_long_quote<&str, &str>, delimited!(
     tag!("\"\"\""),
     verify!(
         take_until_s!("\"\"\""),
@@ -103,8 +99,8 @@ mod test {
 
     #[test]
     fn uchar_test() {
-        assert_eq!(uchar("\\u02FFa")    , IResult::Done("a", "\\u02FF")    );
-        assert_eq!(uchar("\\U02FFAABBa"), IResult::Done("a", "\\U02FFAABB"));
+        assert_eq!(uchar("\\u02FFrest")    , IResult::Done("rest", "\\u02FF")    );
+        assert_eq!(uchar("\\U02FFAABBrest"), IResult::Done("rest", "\\U02FFAABB"));
     }
 
     #[test]
