@@ -55,7 +55,7 @@ named!(echar<&str, &str>, verify!(
     }
 ));
 
-named!(string_literal_single_quote_body_char<&str, &str>, verify!(
+named!(string_literal_quote_body_char<&str, &str>, verify!(
     take_s!(1),
     |val:&str| {
         if let Some(c) = val.chars().next() {
@@ -71,10 +71,44 @@ named!(string_literal_single_quote_body_char<&str, &str>, verify!(
     }
 ));
 
+named!(pub string_literal_quote_body<&str, Vec<&str>>, many0!(
+    alt!(string_literal_quote_body_char | echar | uchar)
+));
+/* [22] STRING_LITERAL_QUOTE */
+named!(pub string_literal_quote<&str, &str>, delimited!(
+    tag!("\""),
+    verify!(
+        take_until_s!("\""),
+        |val: &str| {
+            match string_literal_quote_body(val) {
+                IResult::Error(_) => false,
+                _                 => true,
+            }
+        }
+    ),
+    tag!("\"")
+));
+
+named!(string_literal_single_quote_body_char<&str, &str>, verify!(
+    take_s!(1),
+    |val:&str| {
+        if let Some(c) = val.chars().next() {
+            let u = c as u32;
+            match u {
+                0x27 | 0x5C | 0xA | 0xD
+                  => false,
+                _ => true,
+            }
+        } else {
+            false
+        }
+    }
+));
+
 named!(pub string_literal_single_quote_body<&str, Vec<&str>>, many0!(
     alt!(string_literal_single_quote_body_char | echar | uchar)
 ));
-/* [25] STRING_LITERAL_LONG_QUOTE */
+/* [23] STRING_LITERAL_SINGLE_QUOTE */
 named!(pub string_literal_single_quote<&str, &str>, delimited!(
     tag!("'"),
     verify!(
@@ -147,6 +181,13 @@ mod test {
         assert_eq!(echar("\\\"rest"), IResult::Done("rest", "\\\""));
         assert_eq!(echar("\\'rest") , IResult::Done("rest", "\\'") );
         assert_eq!(echar("\\\\rest"), IResult::Done("rest", "\\\\"));
+    }
+
+    #[test]
+    fn string_literal_quote_test() {
+        let input    = "\"\\t\\u02FFhoge\"rest";
+        let expected = "\\t\\u02FFhoge";
+        assert_eq!(string_literal_quote(input), IResult::Done("rest", expected));
     }
 
     #[test]
