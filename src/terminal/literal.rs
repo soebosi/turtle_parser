@@ -6,6 +6,7 @@ use nom::*;
 fn is_echar(c: char) -> bool {
     c == '\\' || c == 't' || c == 'b' || c == 'n' || c == 'r' || c == 'f' || c == '"' || c == '\''
 }
+
 /* [26] UCHAR */
 named!(uchar<&str, &str>, alt!(
     verify!(
@@ -140,7 +141,6 @@ named!(pub string_literal_long_single_quote<&str, &str>, delimited!(
     ),
     tag!("'''")
 ));
-
 
 named!(pub string_literal_long_quote_body<&str, Vec<&str>>, many0!(
     alt!(tag!("\"") | echar | uchar)

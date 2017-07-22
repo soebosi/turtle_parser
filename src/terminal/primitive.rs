@@ -12,6 +12,26 @@ fn is_anon(c: char) -> bool {
     c == '[' || c == ']' || is_ws(c)
 }
 
+fn is_exponent(c: char) -> bool {
+    c == 'e' || c == 'E' || c == '+' || c == '-' || is_digit(c as u8)
+}
+
+named!(pub exponent<&str, &str>, verify!(
+    take_while_s!(is_exponent),
+    |val:&str| {
+        let len = val.char_indices().count();
+        val.char_indices().all(|(idx, c)| {
+            if idx == 0 {
+                c == 'e' || c == 'E'
+            } else if idx == 1 {
+                c == '+' || c == '-' || is_digit(c as u8)
+            } else {
+                is_digit(c as u8)
+            }
+        })
+    }
+));
+
 /* [161s] WS */
 named!(pub ws<&str, &str>, take_while_s!(is_ws));
 
@@ -45,6 +65,11 @@ named!(pub percent<&str, &str>, verify!(
 mod test {
     use super::*;
     use nom::IResult;
+
+    #[test]
+    fn exponent_test() {
+        assert_eq!(exponent("e-0001rest"), IResult::Done("rest", "e-0001"));
+    }
 
     #[test]
     fn ws_test() {
