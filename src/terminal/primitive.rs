@@ -2,8 +2,10 @@ extern crate nom;
 
 use std::str;
 use nom::{
-    is_digit,
     is_hex_digit,
+    digit,
+    alpha,
+    alphanumeric,
 };
 
 fn is_ws(c: char) -> bool {
@@ -15,8 +17,6 @@ fn is_anon(c: char) -> bool {
     c == '[' || c == ']' || is_ws(c)
 }
 
-fn is_digit_c(c: char) -> bool {
-    is_digit(c as u8)
 #[derive(PartialEq, Debug)]
 pub struct Langtag<'a> {
     language: &'a str,
@@ -44,8 +44,8 @@ pub struct Integer<'a> {
 }
 /* [19] INTEGER */
 named!(pub integer<&str, Integer>, do_parse!(
-    sign:          opt!(alt!(tag!("+") | tag!("-"))) >>
-    integer_part:  take_while1_s!(is_digit_c)        >>
+    sign:         opt!(alt!(tag!("+") | tag!("-"))) >>
+    integer_part: digit                             >>
     (Integer{
         sign:          sign,
         integer_part:  integer_part,
@@ -55,16 +55,16 @@ named!(pub integer<&str, Integer>, do_parse!(
 #[derive(PartialEq, Debug)]
 pub struct Decimal<'a> {
     sign:          Option<&'a str>,
-    integer_part:  &'a str,
+    integer_part:  Option<&'a str>,
     decimal_point: &'a str,
     decimal_part:  &'a str,
 }
 /* [20] DECIMAL */
 named!(pub decimal<&str, Decimal>, do_parse!(
     sign:          opt!(alt!(tag!("+") | tag!("-"))) >>
-    integer_part:  take_while_s!(is_digit_c)         >>
+    integer_part:  opt!(digit)                       >>
     decimal_point: tag!(".")                         >>
-    decimal_part:  take_while1_s!(is_digit_c)        >>
+    decimal_part:  digit                             >>
     (Decimal{
         sign:          sign,
         integer_part:  integer_part,
@@ -78,7 +78,7 @@ pub enum Mantissa<'a> {
     IntegerDecimal {
         integer_part:  &'a str,
         decimal_point: &'a str,
-        decimal_part:  &'a str,
+        decimal_part:  Option<&'a str>,
     },
     Decimal {
         decimal_point: &'a str,
@@ -99,9 +99,9 @@ named!(pub double<&str, Double>, do_parse!(
     sign:     opt!(alt!(tag!("+") | tag!("-"))) >>
     mantissa: alt!(
         do_parse!(
-            integer_part:  take_while1_s!(is_digit_c) >>
-            decimal_point: tag!(".")                  >>
-            decimal_part:  take_while_s!(is_digit_c)  >>
+            integer_part:  digit       >>
+            decimal_point: tag!(".")   >>
+            decimal_part:  opt!(digit) >>
             (Mantissa::IntegerDecimal{
                 integer_part:  integer_part,
                 decimal_point: decimal_point,
@@ -109,15 +109,15 @@ named!(pub double<&str, Double>, do_parse!(
             })
         ) |
         do_parse!(
-            decimal_point: tag!(".")                  >>
-            decimal_part:  take_while1_s!(is_digit_c) >>
+            decimal_point: tag!(".") >>
+            decimal_part:  digit     >>
             (Mantissa::Decimal{
                 decimal_point: decimal_point,
                 decimal_part:  decimal_part,
             })
         ) |
         do_parse!(
-            integer_part: take_while1_s!(is_digit_c) >>
+            integer_part: digit >>
             (Mantissa::Integer{
                 integer_part: integer_part,
             })
@@ -142,7 +142,7 @@ pub struct Exponent<'a> {
 named!(pub exponent<&str, Exponent>, do_parse!(
     exponent_symbol: alt!(tag!("e") | tag!("E"))       >>
     sign:            opt!(alt!(tag!("+") | tag!("-"))) >>
-    exponent_number: take_while1_s!(is_digit_c)        >>
+    exponent_number: digit                             >>
     (Exponent{
         exponent_symbol: exponent_symbol,
         sign:            sign,
@@ -217,7 +217,7 @@ mod test {
         let input    = "-1234.5678rest";
         let expected = IResult::Done("rest", Decimal{
             sign:          Some("-"),
-            integer_part:  "1234",
+            integer_part:  Some("1234"),
             decimal_point: ".",
             decimal_part:  "5678",
         });
@@ -232,7 +232,7 @@ mod test {
             mantissa: Mantissa::IntegerDecimal {
                 integer_part:  "1234",
                 decimal_point: ".",
-                decimal_part:  "5678",
+                decimal_part:  Some("5678"),
             },
             exponent: Exponent {
                 exponent_symbol: "e",
