@@ -20,6 +20,27 @@ fn is_digit_c(c: char) -> bool {
 }
 
 #[derive(PartialEq, Debug)]
+pub struct Decimal<'a> {
+    sign:          Option<&'a str>,
+    integer_part:  &'a str,
+    decimal_point: &'a str,
+    decimal_part:  &'a str,
+}
+/* [20] DECIMAL */
+named!(pub decimal<&str, Decimal>, do_parse!(
+    sign:          opt!(alt!(tag!("+") | tag!("-"))) >>
+    integer_part:  take_while_s!(is_digit_c)         >>
+    decimal_point: tag!(".")                         >>
+    decimal_part:  take_while1_s!(is_digit_c)        >>
+    (Decimal{
+        sign:          sign,
+        integer_part:  integer_part,
+        decimal_point: decimal_point,
+        decimal_part:  decimal_part,
+    })
+));
+
+#[derive(PartialEq, Debug)]
 pub enum Mantissa<'a> {
     IntegerDecimal {
         integer_part:  &'a str,
@@ -129,6 +150,18 @@ named!(pub percent<&str, &str>, verify!(
 mod test {
     use super::*;
     use nom::IResult;
+
+    #[test]
+    fn decimal_normal_test() {
+        let input    = "-1234.5678rest";
+        let expected = IResult::Done("rest", Decimal{
+            sign:          Some("-"),
+            integer_part:  "1234",
+            decimal_point: ".",
+            decimal_part:  "5678",
+        });
+        assert_eq!(decimal(input), expected);
+    }
 
     #[test]
     fn double_normal_test() {
