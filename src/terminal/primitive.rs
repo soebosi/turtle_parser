@@ -1,7 +1,10 @@
 extern crate nom;
 
 use std::str;
-use nom::*;
+use nom::{
+    is_digit,
+    is_hex_digit,
+};
 
 fn is_ws(c: char) -> bool {
     let u = c as u32;
@@ -17,17 +20,75 @@ fn is_digit_c(c: char) -> bool {
 }
 
 #[derive(PartialEq, Debug)]
+pub enum Mantissa<'a> {
+    IntegerDecimal {
+        integer_part:  &'a str,
+        decimal_point: &'a str,
+        decimal_part:  &'a str,
+    },
+    Decimal {
+        decimal_point: &'a str,
+        decimal_part:  &'a str,
+    },
+    Integer {
+        integer_part: &'a str,
+    },
+}
+#[derive(PartialEq, Debug)]
+pub struct Double<'a> {
+    sign:     Option<&'a str>,
+    mantissa: Mantissa<'a>,
+    exponent: Exponent<'a>,
+}
+/* [21] DOUBLE */
+named!(pub double<&str, Double>, do_parse!(
+    sign:     opt!(alt!(tag!("+") | tag!("-"))) >>
+    mantissa: alt!(
+        do_parse!(
+            integer_part:  take_while1_s!(is_digit_c) >>
+            decimal_point: tag!(".")                  >>
+            decimal_part:  take_while_s!(is_digit_c)  >>
+            (Mantissa::IntegerDecimal{
+                integer_part:  integer_part,
+                decimal_point: decimal_point,
+                decimal_part:  decimal_part,
+            })
+        ) |
+        do_parse!(
+            decimal_point: tag!(".")                  >>
+            decimal_part:  take_while1_s!(is_digit_c) >>
+            (Mantissa::Decimal{
+                decimal_point: decimal_point,
+                decimal_part:  decimal_part,
+            })
+        ) |
+        do_parse!(
+            integer_part: take_while1_s!(is_digit_c) >>
+            (Mantissa::Integer{
+                integer_part: integer_part,
+            })
+        )
+    ) >>
+    exponent: exponent >>
+    (Double{
+        sign:     sign,
+        mantissa: mantissa,
+        exponent: exponent,
+    })
+));
+
+#[derive(PartialEq, Debug)]
 pub struct Exponent<'a> {
     exponent_symbol: &'a str,
-    sign: Option<&'a str>,
+    sign:            Option<&'a str>,
     exponent_number: &'a str,
 }
 
 /* [154s] EXPONENT */
 named!(pub exponent<&str, Exponent>, do_parse!(
-    exponent_symbol: alt!(tag!("e") | tag!("E")) >>
+    exponent_symbol: alt!(tag!("e") | tag!("E"))       >>
     sign:            opt!(alt!(tag!("+") | tag!("-"))) >>
-    exponent_number: take_while1_s!(is_digit_c) >>
+    exponent_number: take_while1_s!(is_digit_c)        >>
     (Exponent{
         exponent_symbol: exponent_symbol,
         sign:            sign,
@@ -70,8 +131,56 @@ mod test {
     use nom::IResult;
 
     #[test]
+    fn double_normal_test() {
+        let input    = "-1234.5678e-0123456789rest";
+        let expected = IResult::Done("rest", Double{
+            sign:     Some("-"),
+            mantissa: Mantissa::IntegerDecimal {
+                integer_part:  "1234",
+                decimal_point: ".",
+                decimal_part:  "5678",
+            },
+            exponent: Exponent {
+                exponent_symbol: "e",
+                sign:            Some("-"),
+                exponent_number: "0123456789",
+            },
+        });
+        assert_eq!(double(input), expected);
+
+        let input    = "-.5678e-0123456789rest";
+        let expected = IResult::Done("rest", Double{
+            sign:     Some("-"),
+            mantissa: Mantissa::Decimal {
+                decimal_point: ".",
+                decimal_part:  "5678",
+            },
+            exponent: Exponent {
+                exponent_symbol: "e",
+                sign:            Some("-"),
+                exponent_number: "0123456789",
+            },
+        });
+        assert_eq!(double(input), expected);
+
+        let input    = "+5678e-0123456789rest";
+        let expected = IResult::Done("rest", Double{
+            sign:     Some("+"),
+            mantissa: Mantissa::Integer {
+                integer_part: "5678",
+            },
+            exponent: Exponent {
+                exponent_symbol: "e",
+                sign:            Some("-"),
+                exponent_number: "0123456789",
+            },
+        });
+        assert_eq!(double(input), expected);
+    }
+
+    #[test]
     fn exponent_normal_test() {
-        let input = "e-0123456789rest";
+        let input    = "e-0123456789rest";
         let expected = IResult::Done("rest", Exponent{
             exponent_symbol: "e",
             sign:            Some("-"),
@@ -79,7 +188,7 @@ mod test {
         });
         assert_eq!(exponent(input), expected);
 
-        let input = "E+0123456789rest";
+        let input    = "E+0123456789rest";
         let expected = IResult::Done("rest", Exponent{
             exponent_symbol: "E",
             sign:            Some("+"),
@@ -87,7 +196,7 @@ mod test {
         });
         assert_eq!(exponent(input), expected);
 
-        let input = "e0123456789rest";
+        let input    = "e0123456789rest";
         let expected = IResult::Done("rest", Exponent{
             exponent_symbol: "e",
             sign:            None,
