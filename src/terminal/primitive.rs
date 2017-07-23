@@ -20,6 +20,21 @@ fn is_digit_c(c: char) -> bool {
 }
 
 #[derive(PartialEq, Debug)]
+pub struct Integer<'a> {
+    sign:          Option<&'a str>,
+    integer_part:  &'a str,
+}
+/* [19] INTEGER */
+named!(pub integer<&str, Integer>, do_parse!(
+    sign:          opt!(alt!(tag!("+") | tag!("-"))) >>
+    integer_part:  take_while1_s!(is_digit_c)        >>
+    (Integer{
+        sign:          sign,
+        integer_part:  integer_part,
+    })
+));
+
+#[derive(PartialEq, Debug)]
 pub struct Decimal<'a> {
     sign:          Option<&'a str>,
     integer_part:  &'a str,
@@ -150,6 +165,16 @@ named!(pub percent<&str, &str>, verify!(
 mod test {
     use super::*;
     use nom::IResult;
+
+    #[test]
+    fn integer_normal_test() {
+        let input    = "-1234rest";
+        let expected = IResult::Done("rest", Integer{
+            sign:          Some("-"),
+            integer_part:  "1234",
+        });
+        assert_eq!(integer(input), expected);
+    }
 
     #[test]
     fn decimal_normal_test() {
