@@ -12,24 +12,27 @@ fn is_anon(c: char) -> bool {
     c == '[' || c == ']' || is_ws(c)
 }
 
-fn is_exponent(c: char) -> bool {
-    c == 'e' || c == 'E' || c == '+' || c == '-' || is_digit(c as u8)
+fn is_digit_c(c: char) -> bool {
+    is_digit(c as u8)
 }
 
-named!(pub exponent<&str, &str>, verify!(
-    take_while_s!(is_exponent),
-    |val:&str| {
-        let len = val.char_indices().count();
-        val.char_indices().all(|(idx, c)| {
-            if idx == 0 {
-                c == 'e' || c == 'E'
-            } else if idx == 1 {
-                c == '+' || c == '-' || is_digit(c as u8)
-            } else {
-                is_digit(c as u8)
-            }
-        })
-    }
+#[derive(PartialEq, Debug)]
+pub struct Exponent<'a> {
+    exponent_symbol: &'a str,
+    sign: Option<&'a str>,
+    exponent_number: &'a str,
+}
+
+/* [154s] EXPONENT */
+named!(pub exponent<&str, Exponent>, do_parse!(
+    exponent_symbol: alt!(tag!("e") | tag!("E")) >>
+    sign:            opt!(alt!(tag!("+") | tag!("-"))) >>
+    exponent_number: take_while1_s!(is_digit_c) >>
+    (Exponent{
+        exponent_symbol: exponent_symbol,
+        sign:            sign,
+        exponent_number: exponent_number,
+    })
 ));
 
 /* [161s] WS */
@@ -67,8 +70,30 @@ mod test {
     use nom::IResult;
 
     #[test]
-    fn exponent_test() {
-        assert_eq!(exponent("e-0001rest"), IResult::Done("rest", "e-0001"));
+    fn exponent_normal_test() {
+        let input = "e-0123456789rest";
+        let expected = IResult::Done("rest", Exponent{
+            exponent_symbol: "e",
+            sign:            Some("-"),
+            exponent_number: "0123456789",
+        });
+        assert_eq!(exponent(input), expected);
+
+        let input = "E+0123456789rest";
+        let expected = IResult::Done("rest", Exponent{
+            exponent_symbol: "E",
+            sign:            Some("+"),
+            exponent_number: "0123456789",
+        });
+        assert_eq!(exponent(input), expected);
+
+        let input = "e0123456789rest";
+        let expected = IResult::Done("rest", Exponent{
+            exponent_symbol: "e",
+            sign:            None,
+            exponent_number: "0123456789",
+        });
+        assert_eq!(exponent(input), expected);
     }
 
     #[test]
