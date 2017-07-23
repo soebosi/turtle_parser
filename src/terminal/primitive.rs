@@ -17,7 +17,25 @@ fn is_anon(c: char) -> bool {
 
 fn is_digit_c(c: char) -> bool {
     is_digit(c as u8)
+#[derive(PartialEq, Debug)]
+pub struct Langtag<'a> {
+    language: &'a str,
+    subtags:  Vec<&'a str>,
 }
+/* [144s] LANGTAG */
+named!(pub langtag<&str, Langtag>, do_parse!(
+    tag!("@") >>
+    language: alpha >>
+    tag!("-") >>
+    subtags:  separated_list_complete!(
+        tag!("-"),
+        alphanumeric
+    ) >>
+    (Langtag{
+        language: language,
+        subtags:  subtags,
+    })
+));
 
 #[derive(PartialEq, Debug)]
 pub struct Integer<'a> {
@@ -165,6 +183,24 @@ named!(pub percent<&str, &str>, verify!(
 mod test {
     use super::*;
     use nom::IResult;
+    use nom::ErrorKind;
+
+    #[test]
+    fn langtag_normal_test() {
+        let input    = "@en-a-bbb-a-ccc,rest";
+        let expected = IResult::Done(",rest", Langtag{
+            language: "en",
+            subtags:  vec!["a", "bbb", "a", "ccc"]
+        });
+        assert_eq!(langtag(input), expected);
+    }
+
+    #[test]
+    fn langtag_abnormal_test() {
+        let input    = "@en01-a-bbb-a-ccc,rest";
+        let expected = IResult::Error(ErrorKind::Tag);
+        assert_eq!(langtag(input), expected);
+    }
 
     #[test]
     fn integer_normal_test() {
