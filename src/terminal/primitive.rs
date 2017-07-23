@@ -234,11 +234,7 @@ mod test {
                 decimal_point: ".",
                 decimal_part:  Some("5678"),
             },
-            exponent: Exponent {
-                exponent_symbol: "e",
-                sign:            Some("-"),
-                exponent_number: "0123456789",
-            },
+            exponent: exponent("e-0123456789").unwrap().1,
         });
         assert_eq!(double(input), expected);
 
@@ -249,11 +245,7 @@ mod test {
                 decimal_point: ".",
                 decimal_part:  "5678",
             },
-            exponent: Exponent {
-                exponent_symbol: "e",
-                sign:            Some("-"),
-                exponent_number: "0123456789",
-            },
+            exponent: exponent("e-0123456789").unwrap().1,
         });
         assert_eq!(double(input), expected);
 
@@ -263,11 +255,7 @@ mod test {
             mantissa: Mantissa::Integer {
                 integer_part: "5678",
             },
-            exponent: Exponent {
-                exponent_symbol: "e",
-                sign:            Some("-"),
-                exponent_number: "0123456789",
-            },
+            exponent: exponent("e-0123456789").unwrap().1,
         });
         assert_eq!(double(input), expected);
     }
