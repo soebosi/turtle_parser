@@ -289,7 +289,7 @@ mod test {
 
     #[test]
     fn ws_test() {
-        assert_eq!(ws("   a"), IResult::Done("a", "   "));
+        assert_eq!(ws(" 	\r\nrest"), IResult::Done("rest", " 	\r\n"));
     }
 
     #[test]
