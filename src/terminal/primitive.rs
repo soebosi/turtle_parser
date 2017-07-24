@@ -2,7 +2,7 @@ extern crate nom;
 
 use std::str;
 use nom::{
-    is_hex_digit,
+    hex_digit,
     digit,
     alpha,
     alphanumeric,
@@ -157,12 +157,10 @@ named!(pub anon<&str, &str>, delimited!(
 ));
 
 /* [170s] PERCENT */
-named!(pub percent<&str, &str>, verify!(
-    take_s!(3),
-    |val:&str| {
-        let bytes = val.as_bytes();
-        bytes[0] == 0x25 && is_hex_digit(bytes[1]) && is_hex_digit(bytes[2])
-    }
+named!(pub percent<&str, &str>, do_parse!(
+    tag!("%") >>
+    hex: hex_digit >>
+    (hex)
 ));
 
 #[cfg(test)]
@@ -290,7 +288,7 @@ mod test {
     #[test]
     fn percent_test() {
         let input    = "%2Arest";
-        let expected = IResult::Done("rest", "%2A");
+        let expected = IResult::Done("rest", "2A");
         assert_eq!(percent(input), expected);
     }
 }
