@@ -23,7 +23,7 @@ named!(pub langtag<&str, Langtag>, do_parse!(
     tag!("@") >>
     language: alpha >>
     tag!("-") >>
-    subtags:  separated_list_complete!(
+    subtags: separated_list_complete!(
         tag!("-"),
         alphanumeric
     ) >>
@@ -40,8 +40,10 @@ pub struct Integer<'a> {
 }
 /* [19] INTEGER */
 named!(pub integer<&str, Integer>, do_parse!(
-    sign:         opt!(alt!(tag!("+") | tag!("-"))) >>
-    integer_part: digit                             >>
+    sign: opt!(alt!(
+        tag!("+") | tag!("-")
+    )) >>
+    integer_part: digit >>
     (Integer{
         sign:          sign,
         integer_part:  integer_part,
@@ -57,10 +59,13 @@ pub struct Decimal<'a> {
 }
 /* [20] DECIMAL */
 named!(pub decimal<&str, Decimal>, do_parse!(
-    sign:          opt!(alt!(tag!("+") | tag!("-"))) >>
-    integer_part:  opt!(digit)                       >>
-    decimal_point: tag!(".")                         >>
-    decimal_part:  digit                             >>
+    sign: opt!(alt!(
+        tag!("+") |
+        tag!("-")
+    )) >>
+    integer_part:  opt!(digit) >>
+    decimal_point: tag!(".")   >>
+    decimal_part:  digit       >>
     (Decimal{
         sign:          sign,
         integer_part:  integer_part,
@@ -92,7 +97,7 @@ pub struct Double<'a> {
 }
 /* [21] DOUBLE */
 named!(pub double<&str, Double>, do_parse!(
-    sign:     opt!(alt!(tag!("+") | tag!("-"))) >>
+    sign: opt!(alt!(tag!("+") | tag!("-"))) >>
     mantissa: alt!(
         do_parse!(
             integer_part:  digit       >>
