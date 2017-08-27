@@ -38,6 +38,28 @@ fn is_pn_local_esc(c: char) -> bool {
     }
 }
 
+fn is_blank_node_label(c: char) -> bool {
+    is_pn_chars(c) || c == '.'
+}
+
+named!(pub pname_ns<&str, &str>, do_parse!(
+    prefix: pn_prefix >>
+    tag!(":") >>
+    (prefix)
+));
+
+/* [141s] BLANK_NODE_LABEL */
+named!(pub blank_node_label<&str, &str>, do_parse!(
+    tag!("_:") >>
+    node: verify!(
+      take_while_s!(is_blank_node_label),
+      |val:&str| {
+          true
+      }
+    ) >>
+    (node)
+));
+
 /* [163s] PN_CHARS_BASE */
 named!(pub pn_chars_base<&str, &str>, verify!(
     take_s!(1),
@@ -139,6 +161,24 @@ named!(pub pn_local_esc<&str, &str>, verify!(
 mod test {
     use super::*;
     use nom::IResult;
+
+    #[test]
+    fn pname_ns_test() {
+        let input    = "test:rest";
+        let expected = IResult::Done("rest", "test");
+        assert_eq!(pname_ns(input), expected);
+
+        let input    = ":rest";
+        let expected = IResult::Done("rest", "");
+        assert_eq!(pname_ns(input), expected);
+    }
+
+    #[test]
+    fn blank_node_label_test() {
+        let input    = "_:test_rest";
+        let expected = IResult::Done("_rest", "test");
+        assert_eq!(blank_node_label(input), expected);
+    }
 
     #[test]
     fn pn_chars_base_test() {
