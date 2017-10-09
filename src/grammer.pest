@@ -93,13 +93,13 @@ pname_ln = @{ pname_ns ~ pn_local }
 
 // [141s]	BLANK_NODE_LABEL	::=	'_:' (PN_CHARS_U | [0-9]) ((PN_CHARS | '.')* PN_CHARS)?
 // TODO:Fix me
-blank_node_label = { "_:" ~ ( pn_chars_u | '0'..'9') ~ (pn_chars | ".")* }
+blank_node_label = @{ "_:" ~ ( pn_chars_u | '0'..'9') ~ (pn_chars)* }
 
 // [144s]	LANGTAG	::=	'@' [a-zA-Z]+ ('-' [a-zA-Z0-9]+)*
-langtag = @{ "@" ~ ('a'..'z' | 'A'..'Z')+ ~ ("-" ~ ('a'..'z' | 'A'..'Z' | '0'..'9'))* }
+langtag = @{ "@" ~ ('a'..'z' | 'A'..'Z')+ ~ ("-" ~ ('a'..'z' | 'A'..'Z' | '0'..'9')+)* }
 
 // [19]	INTEGER	::=	[+-]? [0-9]+
-integer = @{ ("+" | "-")? ~ '0'..'9' }
+integer = @{ ("+" | "-")? ~ ('0'..'9')+ }
 
 // [20]	DECIMAL	::=	[+-]? [0-9]* '.' [0-9]+
 decimal = @{ ("+" | "-")? ~ ('0'..'9')* ~ "." ~ ('0'..'9')+ }
@@ -111,19 +111,22 @@ double = @{ ("+" | "-")? ~ (('0'..'9')+ ~ "." ~ ('0'..'9')* ~ exponent) | ("." ~
 exponent = @{ ("e" | "E") ~ ("+" | "-")? ~ ('0'..'9') }
 
 // [22]	STRING_LITERAL_QUOTE	::=	'"' ([^#x22#x5C#xA#xD] | ECHAR | UCHAR)* '"' /* #x22=" #x5C=\ #xA=new line #xD=carriage return */
-string_literal_quote = { "\"" ~ (!("\u{22}" | "\u{5C}" | "\u{0A}" | "\u{0D}") ~ any | echar | uchar)* ~ "\"" }
+string_literal_quote = @{ "\"" ~ (!("\u{22}" | "\u{5C}" | "\u{0A}" | "\u{0D}") ~ any | echar | uchar)* ~ "\"" }
 
 // [23]	STRING_LITERAL_SINGLE_QUOTE	::=	"'" ([^#x27#x5C#xA#xD] | ECHAR | UCHAR)* "'" /* #x27=' #x5C=\ #xA=new line #xD=carriage return */
-string_literal_single_quote = { "'" ~ (!("\u{27}" | "\u{5C}" | "\u{0A}" | "\u{0D}") ~ any | echar | uchar)* ~ "'" }
+string_literal_single_quote = @{ "'" ~ (!("\u{27}" | "\u{5C}" | "\u{0A}" | "\u{0D}") ~ any | echar | uchar)* ~ "'" }
 
 // [24]	STRING_LITERAL_LONG_SINGLE_QUOTE	::=	"'''" (("'" | "''")? ([^'\] | ECHAR | UCHAR))* "'''"
-string_literal_long_single_quote = { "'''" ~ (("'" | "''")? ~ (!("'" | "\\") ~ any | echar | uchar))* ~ "'''" }
+string_literal_long_single_quote = @{ "'''" ~ (("'" | "''")? ~ (!("'" | "\\") ~ any | echar | uchar))* ~ "'''" }
 
 // [25]	STRING_LITERAL_LONG_QUOTE	::=	'"""' (('"' | '""')? ([^"\] | ECHAR | UCHAR))* '"""'
-string_literal_long_quote = { "\"\"\"" ~ (("\"" | "\"\"")? ~ (!("\"" | "\\") ~ any | echar | uchar))* ~ "\"\"\"" }
+string_literal_long_quote = @{ "\"\"\"" ~ (("\"" | "\"\"")? ~ (!("\"" | "\\") ~ any | echar | uchar))* ~ "\"\"\"" }
 
 // [26]	UCHAR	::=	'\u' HEX HEX HEX HEX | '\U' HEX HEX HEX HEX HEX HEX HEX HEX
-uchar = @{ ("\\u" ~ hex ~ hex ~ hex ~ hex) | ("\\U" ~ hex ~ hex ~ hex ~ hex ~ hex ~ hex ~ hex ~ hex) }
+uchar = @{
+  ("\\u" ~ hex ~ hex ~ hex ~ hex) |
+  ("\\U" ~ hex ~ hex ~ hex ~ hex ~ hex ~ hex ~ hex ~ hex)
+}
 
 // [159s]	ECHAR	::=	'\' [tbnrf"'\]
 echar = @{ "\\" ~ ( "t" | "b" | "n" | "r" | "f" | "\"" | "'" | "\\" ) }
@@ -132,10 +135,25 @@ echar = @{ "\\" ~ ( "t" | "b" | "n" | "r" | "f" | "\"" | "'" | "\\" ) }
 ws = _{ "\u{20}" | "\u{09}" | "\u{0D}" | "\u{0A}" }
 
 // [162s]	ANON	::=	'[' WS* ']'
-anon = { "[" ~ ws* ~ "]" }
+anon = @{ "[" ~ ws* ~ "]" }
 
 // [163s]	PN_CHARS_BASE	::=	[A-Z] | [a-z] | [#x00C0-#x00D6] | [#x00D8-#x00F6] | [#x00F8-#x02FF] | [#x0370-#x037D] | [#x037F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
-pn_chars_base = @{ 'A'..'Z' | 'a'..'z' | '\u{00C0}'..'\u{00D6}' | '\u{00D8}'..'\u{00F6}' | '\u{00F8}'..'\u{02FF}' | '\u{0370}'..'\u{037D}' | '\u{037F}'..'\u{1FFF}' | '\u{200C}'..'\u{200D}' | '\u{2070}'..'\u{218F}' | '\u{2C00}'..'\u{2FEF}' | '\u{3001}'..'\u{D7FF}' | '\u{F900}'..'\u{FDCF}' | '\u{FDF0}'..'\u{FFFD}' | '\u{10000}'..'\u{EFFFF}' }
+pn_chars_base = @{
+  'A'..'Z' |                // [A-Z]
+  'a'..'z' |                // [a-z]
+  '\u{00C0}'..'\u{00D6}' |  // [#x00C0-#x00D6]
+  '\u{00D8}'..'\u{00F6}' |  // [#x00D8-#x00F6]
+  '\u{00F8}'..'\u{02FF}' |  // [#x00F8-#x02FF]
+  '\u{0370}'..'\u{037D}' |  // [#x0370-#x037D]
+  '\u{037F}'..'\u{1FFF}' |  // [#x037F-#x1FFF]
+  '\u{200C}'..'\u{200D}' |  // [#x200C-#x200D]
+  '\u{2070}'..'\u{218F}' |  // [#x2070-#x218F]
+  '\u{2C00}'..'\u{2FEF}' |  // [#x2C00-#x2FEF]
+  '\u{3001}'..'\u{D7FF}' |  // [#x3001-#xD7FF]
+  '\u{F900}'..'\u{FDCF}' |  // [#xF900-#xFDCF]
+  '\u{FDF0}'..'\u{FFFD}' |  // [#xFDF0-#xFFFD]
+  '\u{10000}'..'\u{EFFFF}'  // [#x10000-#xEFFFF]
+}
 
 // [164s]	PN_CHARS_U	::=	PN_CHARS_BASE | '_'
 pn_chars_u = @{ pn_chars_base | "_" }
@@ -145,11 +163,11 @@ pn_chars = @{ pn_chars_u | "-" | '0'..'9' | "\u{00B7}" | '\u{0300}'..'\u{036F}' 
 
 // [167s]	PN_PREFIX	::=	PN_CHARS_BASE ((PN_CHARS | '.')* PN_CHARS)?
 // TODO:Fix me
-pn_prefix = { pn_chars_base ~ (pn_chars | ".")* }
+pn_prefix = @{ pn_chars_base ~ (pn_chars)* }
 
 // [168s]	PN_LOCAL	::=	(PN_CHARS_U | ':' | [0-9] | PLX) ((PN_CHARS | '.' | ':' | PLX)* (PN_CHARS | ':' | PLX))?
 // TODO:Fix me
-pn_local = { (pn_chars_u | ":" | '0'..'9' | plx) ~ (pn_chars | "." | ":" | plx)* }
+pn_local = @{ (pn_chars_u | ":" | '0'..'9' | plx) ~ (pn_chars | ":" | plx)* }
 
 // [169s]	PLX	::=	PERCENT | PN_LOCAL_ESC
 plx = @{ percent | pn_local_esc }
