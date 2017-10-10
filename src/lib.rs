@@ -1,35 +1,88 @@
 #[macro_use]
-extern crate nom;
+extern crate pest;
+#[macro_use]
+extern crate pest_derive;
 
-use std::str;
+#[cfg(debug_assertions)]
+const _GRAMMER: &'static str = include_str!("grammer.pest");
 
-pub mod terminal {
-    pub mod pn;
-    pub mod literal;
-    pub mod primitive;
+#[derive(Parser)]
+#[grammar = "grammer.pest"]
+struct TurtleParser;
+
+#[test]
+fn iri_test() {
+    parses_to! {
+        parser: TurtleParser,
+        input: "<http://www.example.com>",
+        rule: Rule::iri,
+        tokens: [
+            iri(0, 24, [
+                iriref(0, 24)
+            ])
+        ]
+    };
+
+    parses_to! {
+        parser: TurtleParser,
+        input: "foaf:Person",
+        rule: Rule::iri,
+        tokens: [
+            iri(0, 11, [
+                prefixed_name(0, 11, [
+                    pname_ln(0, 11)
+                ])
+            ])
+        ]
+    };
 }
-use terminal::pn;
-use terminal::primitive;
 
-#[derive(PartialEq, Debug)]
-pub enum Plx<'a> {
-    Percent(&'a str),
-    PnLocalEsc(&'a str),
+#[test]
+fn prefixd_name_test() {
+    parses_to! {
+        parser: TurtleParser,
+        input: "foaf:",
+        rule: Rule::prefixed_name,
+        tokens: [
+            prefixed_name(0, 5, [
+                pname_ns(0, 5)
+            ])
+        ]
+    };
+
+    parses_to! {
+        parser: TurtleParser,
+        input: "foaf:Person",
+        rule: Rule::prefixed_name,
+        tokens: [
+            prefixed_name(0, 11, [
+                pname_ln(0, 11)
+            ])
+        ]
+    };
 }
-/* [169s] PLX */
-named!(pub plx<&str, Plx>, alt!(
-    map!(primitive::percent, Plx::Percent   ) |
-    map!(pn::pn_local_esc  , Plx::PnLocalEsc)
-));
 
-#[cfg(test)]
-mod test {
-    use super::*;
-    use nom::IResult;
+#[test]
+fn blank_node_test() {
+    parses_to! {
+        parser: TurtleParser,
+        input: "_:blank",
+        rule: Rule::blank_node,
+        tokens: [
+            blank_node(0, 7, [
+                blank_node_label(0, 7)
+            ])
+        ]
+    };
 
-    #[test]
-    fn plx_test() {
-        assert_eq!(plx("%2Arest"), IResult::Done("rest", Plx::Percent("2A")));
-        assert_eq!(plx("\\.rest"), IResult::Done("rest", Plx::PnLocalEsc("\\.")));
-    }
+    parses_to! {
+        parser: TurtleParser,
+        input: "[     ]",
+        rule: Rule::blank_node,
+        tokens: [
+            blank_node(0, 7, [
+                anon(0, 7)
+            ])
+        ]
+    };
 }
