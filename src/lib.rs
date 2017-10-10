@@ -11,6 +11,107 @@ const _GRAMMER: &'static str = include_str!("grammer.pest");
 struct TurtleParser;
 
 #[test]
+fn rdf_literal_test() {
+    parses_to! {
+        parser: TurtleParser,
+        input: r#""test"@en"#,
+        rule: Rule::rdf_literal,
+        tokens: [
+            rdf_literal(0, 9, [
+                string(0, 6, [
+                    string_literal_quote(0, 6)
+                ]),
+                langtag(6, 9)
+            ])
+        ]
+    };
+
+    parses_to! {
+        parser: TurtleParser,
+        input: r#""test"^^<http://www.example.com>"#,
+        rule: Rule::rdf_literal,
+        tokens: [
+            rdf_literal(0, 32, [
+                string(0, 6, [
+                    string_literal_quote(0, 6)
+                ]),
+                iri(8, 32, [
+                    iriref(8, 32)
+                ])
+            ])
+        ]
+    };
+}
+
+#[test]
+fn boolean_literal_test() {
+    parses_to! {
+        parser: TurtleParser,
+        input: "true",
+        rule: Rule::boolean_literal,
+        tokens: [
+            boolean_literal(0, 4)
+        ]
+    };
+
+    parses_to! {
+        parser: TurtleParser,
+        input: "false",
+        rule: Rule::boolean_literal,
+        tokens: [
+            boolean_literal(0, 5)
+        ]
+    };
+}
+
+#[test]
+fn string_test() {
+    parses_to! {
+        parser: TurtleParser,
+        input: r#""test""#,
+        rule: Rule::string,
+        tokens: [
+            string(0, 6, [
+                string_literal_quote(0, 6)
+            ])
+        ]
+    };
+
+    parses_to! {
+        parser: TurtleParser,
+        input: r#"'test'"#,
+        rule: Rule::string,
+        tokens: [
+            string(0, 6, [
+                string_literal_single_quote(0, 6)
+            ])
+        ]
+    };
+
+    parses_to! {
+        parser: TurtleParser,
+        input: r#""""test"test""""#,
+        rule: Rule::string,
+        tokens: [
+            string(0, 15, [
+                string_literal_long_quote(0, 15)
+            ])
+        ]
+    };
+
+    parses_to! {
+        parser: TurtleParser,
+        input: r#"'''test'test'''"#,
+        rule: Rule::string,
+        tokens: [
+            string(0, 15, [
+                string_literal_long_single_quote(0, 15)
+            ])
+        ]
+    };
+}
+
+#[test]
 fn iri_test() {
     parses_to! {
         parser: TurtleParser,
