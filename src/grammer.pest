@@ -70,7 +70,12 @@ rdf_literal = { string ~ ( langtag | "^^" ~ iri )? }
 boolean_literal = { "true" | "false" }
 
 // [17]	String	::=	STRING_LITERAL_QUOTE | STRING_LITERAL_SINGLE_QUOTE | STRING_LITERAL_LONG_SINGLE_QUOTE | STRING_LITERAL_LONG_QUOTE
-string = { string_literal_quote | string_literal_single_quote | string_literal_long_single_quote | string_literal_long_quote }
+string = {
+  string_literal_long_quote |
+  string_literal_long_single_quote |
+  string_literal_single_quote |
+  string_literal_quote
+}
 
 // [135s]	iri	::=	IRIREF | PrefixedName
 iri = { iriref | prefixed_name }
@@ -83,7 +88,7 @@ blank_node = { blank_node_label | anon }
 
 // Productions for terminals
 // [18]	IRIREF	::=	'<' ([^#x00-#x20<>"{}|^`\] | UCHAR)* '>' /* #x00=NULL #01-#x1F=control codes #x20=space */
-iriref = { "<" ~ (uchar | (!('\u{00}'..'\u{20}' | "<" | ">" | "\"" | "{" | "}" | "|" | "^" | "`" | "\\") ~ any))* ~ ">" }
+iriref = @{ "<" ~ (uchar | (!('\u{00}'..'\u{20}' | "<" | ">" | "\"" | "{" | "}" | "|" | "^" | "`" | "\\") ~ any))* ~ ">" }
 
 // [139s]	PNAME_NS	::=	PN_PREFIX? ':'
 pname_ns = @{ pn_prefix? ~ ":" }
