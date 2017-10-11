@@ -61,7 +61,11 @@ blank_node_property_list = { "[" ~ predicate_object_list ~ "]" }
 collection = { "(" ~ object* ~ ")" }
 
 // [16]	NumericLiteral	::=	INTEGER | DECIMAL | DOUBLE
-numeric_literal = { integer | decimal | double }
+numeric_literal = {
+  double  |
+  decimal |
+  integer
+}
 
 // [128s]	RDFLiteral	::=	String (LANGTAG | '^^' iri)?
 rdf_literal = { string ~ ( langtag | "^^" ~ iri )? }
