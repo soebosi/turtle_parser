@@ -11,6 +11,49 @@ const _GRAMMER: &'static str = include_str!("grammer.pest");
 struct TurtleParser;
 
 #[test]
+fn literal_test() {
+    parses_to! {
+        parser: TurtleParser,
+        input: r#""test"@en"#,
+        rule: Rule::literal,
+        tokens: [
+            literal(0, 9, [
+                rdf_literal(0, 9, [
+                    string(0, 6, [
+                        string_literal_quote(0, 6)
+                    ]),
+                    langtag(6, 9)
+                ])
+            ])
+        ]
+    };
+
+    parses_to! {
+        parser: TurtleParser,
+        input: "+10",
+        rule: Rule::literal,
+        tokens: [
+            literal(0, 3, [
+                numeric_literal(0, 3, [
+                    integer(0, 3)
+                ])
+            ])
+        ]
+    };
+
+    parses_to! {
+        parser: TurtleParser,
+        input: "true",
+        rule: Rule::literal,
+        tokens: [
+            literal(0, 4, [
+                boolean_literal(0, 4)
+            ])
+        ]
+    };
+}
+
+#[test]
 fn blank_node_property_list_test() {
     parses_to! {
         parser: TurtleParser,
