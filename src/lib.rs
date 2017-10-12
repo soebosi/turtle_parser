@@ -11,6 +11,96 @@ const _GRAMMER: &'static str = include_str!("grammer.pest");
 struct TurtleParser;
 
 #[test]
+fn object_test() {
+    parses_to! {
+        parser: TurtleParser,
+        input: "<http://www.example.com>",
+        rule: Rule::object,
+        tokens: [
+            object(0, 24, [
+                iri(0, 24, [
+                    iriref(0, 24)
+                ])
+            ])
+        ]
+    };
+
+    parses_to! {
+        parser: TurtleParser,
+        input: "_:blank",
+        rule: Rule::object,
+        tokens: [
+            object(0, 7, [
+                blank_node(0, 7, [
+                    blank_node_label(0, 7)
+                ])
+            ])
+        ]
+    };
+
+    parses_to! {
+        parser: TurtleParser,
+        input: "(<http://www.example.com> ([ ]))",
+        rule: Rule::object,
+        tokens: [
+            object(0, 32, [
+                collection(0, 32, [
+                    object(1, 25, [
+                        iri(1, 25, [ iriref(1, 25) ])
+                    ]),
+                    object(26, 31, [
+                        collection(26, 31, [
+                            object(27, 30, [ blank_node(27, 30, [ anon(27, 30) ]) ])
+                        ])
+                    ])
+                ])
+            ])
+        ]
+    };
+
+    parses_to! {
+        parser: TurtleParser,
+        input: "[<http://verb> <http://object1>, <http://object2>; a <http://object3>]",
+        rule: Rule::object,
+        tokens: [
+            object(0, 70, [
+                blank_node_property_list(0, 70, [
+                    predicate_object_list(1, 69, [
+                        verb(1, 14, [ predicate(1, 14, [ iri(1, 14, [ iriref(1, 14)]) ]) ]),
+                        object_list(15, 49, [
+                            object(15, 31, [ iri(15, 31, [ iriref(15, 31)]) ]),
+                            object(33, 49, [ iri(33, 49, [ iriref(33, 49)]) ])
+                        ]),
+                        verb(51, 52),
+                        object_list(53, 69, [
+                            object(53, 69, [ iri(53, 69, [ iriref(53, 69)]) ])
+                        ])
+                    ])
+                ])
+            ])
+        ]
+    };
+
+    parses_to! {
+        parser: TurtleParser,
+        input: r#""test"@en"#,
+        rule: Rule::object,
+        tokens: [
+            object(0, 9, [
+                literal(0, 9, [
+                    rdf_literal(0, 9, [
+                        string(0, 6, [
+                            string_literal_quote(0, 6)
+                        ]),
+                        langtag(6, 9)
+                    ])
+                ])
+            ])
+        ]
+    };
+}
+
+#[test]
 fn literal_test() {
     parses_to! {
         parser: TurtleParser,
