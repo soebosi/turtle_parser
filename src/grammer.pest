@@ -7,7 +7,7 @@
 // Production labels consisting of a number and a final 's', e.g. [60s], reference the production with that number in the SPARQL 1.1 Query Language grammar [SPARQL11-QUERY].
 
 whitespace = _{ ws }
-comment    = _{ "#" ~ any ~ ("\n" | "\r\n")}
+comment    = _{ "#" ~ (!("\n" | "\r\n") ~ any)* ~ ("\n" | "\r\n")}
 
 // [1]	turtleDoc	::=	statement*
 turtle_doc = { statement* }
