@@ -11,6 +11,22 @@ const _GRAMMER: &'static str = include_str!("grammer.pest");
 struct TurtleParser;
 
 #[test]
+fn predicate_test() {
+    parses_to! {
+        parser: TurtleParser,
+        input: "<http://www.example.com>",
+        rule: Rule::predicate,
+        tokens: [
+            predicate(0, 24, [
+                iri(0, 24, [
+                    iriref(0, 24)
+                ])
+            ])
+        ]
+    };
+}
+
+#[test]
 fn object_test() {
     parses_to! {
         parser: TurtleParser,

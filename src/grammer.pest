@@ -90,7 +90,10 @@ prefixed_name = { pname_ln | pname_ns }
 // [137s]	BlankNode	::=	BLANK_NODE_LABEL | ANON
 blank_node = { blank_node_label | anon }
 
+//
 // Productions for terminals
+//
+
 // [18]	IRIREF	::=	'<' ([^#x00-#x20<>"{}|^`\] | UCHAR)* '>' /* #x00=NULL #01-#x1F=control codes #x20=space */
 iriref = @{ "<" ~ (uchar | (!('\u{00}'..'\u{20}' | "<" | ">" | "\"" | "{" | "}" | "|" | "^" | "`" | "\\") ~ any))* ~ ">" }
 
