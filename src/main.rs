@@ -35,7 +35,10 @@ fn main() {
     println!("{}", serde_json::to_string(&result).unwrap());
 }
 
-fn create_result_from_pairs(pairs: iterators::Pairs<grammar::Rule, inputs::StrInput>, result: &mut Vec<Result>) {
+fn create_result_from_pairs(
+    pairs: iterators::Pairs<grammar::Rule, inputs::StrInput>,
+    result: &mut Vec<Result>,
+) {
     for pair in pairs {
         let rule = format!("{:?}", pair.as_rule());
         let text = String::from(pair.as_str());
@@ -44,9 +47,9 @@ fn create_result_from_pairs(pairs: iterators::Pairs<grammar::Rule, inputs::StrIn
         result.push(Result {
             rule,
             text: if children.len() == 0 {
-              Some(text)
+                Some(text)
             } else {
-              None
+                None
             },
             children,
         });
