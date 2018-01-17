@@ -31,16 +31,16 @@ fn main() {
     let pairs = TurtleParser::parse_str(Rule::turtle_doc, &contents)
         .unwrap_or_else(|e| panic!("{}", e));
     let mut result = Vec::new();
-    print_deep(pairs, &mut result);
+    create_result_from_pairs(pairs, &mut result);
     println!("{}", serde_json::to_string(&result).unwrap());
 }
 
-fn print_deep(pairs: iterators::Pairs<grammar::Rule, inputs::StrInput>, result: &mut Vec<Result>) {
+fn create_result_from_pairs(pairs: iterators::Pairs<grammar::Rule, inputs::StrInput>, result: &mut Vec<Result>) {
     for pair in pairs {
         let rule = format!("{:?}", pair.as_rule());
         let text = String::from(pair.as_str());
         let mut children = Vec::new();
-        print_deep(pair.into_inner(), &mut children);
+        create_result_from_pairs(pair.into_inner(), &mut children);
         result.push(Result {
             rule,
             text: if children.len() == 0 {
