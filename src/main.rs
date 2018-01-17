@@ -18,7 +18,7 @@ use std::io::Read;
 #[derive(Serialize, Deserialize)]
 struct Result {
     rule: String,
-    text: String,
+    text: Option<String>,
     children: Vec<Result>,
 }
 
@@ -43,7 +43,11 @@ fn print_deep(pairs: iterators::Pairs<grammar::Rule, inputs::StrInput>, result: 
         print_deep(pair.into_inner(), &mut children);
         result.push(Result {
             rule,
-            text,
+            text: if children.len() == 0 {
+              Some(text)
+            } else {
+              None
+            },
             children,
         });
     }
