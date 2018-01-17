@@ -1,7 +1,12 @@
+extern crate serde;
+extern crate serde_json;
+
 #[macro_use]
 extern crate pest;
 #[macro_use]
 extern crate pest_derive;
+#[macro_use]
+extern crate serde_derive;
 
 mod grammar;
 
@@ -10,7 +15,7 @@ use pest::{Parser, iterators, inputs};
 use std::{fs, env};
 use std::io::Read;
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 struct Result {
     rule: String,
     text: String,
@@ -27,7 +32,7 @@ fn main() {
         .unwrap_or_else(|e| panic!("{}", e));
     let mut result = Vec::new();
     print_deep(pairs, &mut result);
-    println!("{:?}", result);
+    println!("{}", serde_json::to_string(&result).unwrap());
 }
 
 fn print_deep(pairs: iterators::Pairs<grammar::Rule, inputs::StrInput>, result: &mut Vec<Result>) {
