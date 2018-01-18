@@ -28,11 +28,15 @@ fn main() {
     let mut contents = String::new();
     file.read_to_string(&mut contents);
 
+    let mut result = Vec::new();
+    parse(&contents, &mut result);
+    println!("{}", serde_json::to_string(&result).unwrap());
+}
+
+fn parse(contents: &String, result: &mut Vec<Result>) {
     let pairs = TurtleParser::parse_str(Rule::turtle_doc, &contents)
         .unwrap_or_else(|e| panic!("{}", e));
-    let mut result = Vec::new();
-    create_result_from_pairs(pairs, &mut result);
-    println!("{}", serde_json::to_string(&result).unwrap());
+    create_result_from_pairs(pairs, result);
 }
 
 fn create_result_from_pairs(
