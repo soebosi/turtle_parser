@@ -4,8 +4,8 @@ version = "0.1.0"
 authors = ["ebosi38051 <ebosi38051@gmail.com>"]
 
 [dependencies]
-pest = "^1.0.0-beta"
-pest_derive = "^1.0.0-beta"
+pest = "^1.0.0-rc"
+pest_derive = "^1.0.0-rc"
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"

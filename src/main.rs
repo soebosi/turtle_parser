@@ -11,7 +11,7 @@ extern crate serde_derive;
 mod grammar;
 
 use grammar::{TurtleParser, Rule};
-use pest::{Parser, iterators, inputs};
+use pest::{Parser, iterators};
 use std::{fs, env};
 use std::io::Read;
 
@@ -34,13 +34,13 @@ fn main() {
 }
 
 fn parse(contents: &String, result: &mut Vec<Result>) {
-    let pairs = TurtleParser::parse_str(Rule::turtle_doc, &contents)
+    let pairs = TurtleParser::parse(Rule::turtle_doc, &contents)
         .unwrap_or_else(|e| panic!("{}", e));
     create_result_from_pairs(pairs, result);
 }
 
 fn create_result_from_pairs(
-    pairs: iterators::Pairs<grammar::Rule, inputs::StrInput>,
+    pairs: iterators::Pairs<grammar::Rule>,
     result: &mut Vec<Result>,
 ) {
     for pair in pairs {
